@@ -22,9 +22,7 @@ kayttovesi_index = 18
 kaivo_meno_raja = 2
 lisalampo_raja = -400
 mittauksia = 1500
-
 class AnalysisSummary:
-
 	def __init__(self, csvfile):
 		self.summary_writer = csv.writer(csvfile)
 		self.summary_writer.writerow(['Paivamaara'] + ['Kaynnistyksia'] + ['Pienin asteminuutti'] + ['Kaynnissa kokonaisajasta(lammitys)'] + ['Kaynnissa kokonaisajasta(vesi)'] + ['Lisalampo paalla'] + ['Keskimenolampotila'] + ['Keskitulolampotila'] + ['Keskiulkolampotila'] + ['Pienin kaivo (tulo)'] + ['Pienin kaivo (meno)'])	
@@ -32,18 +30,17 @@ class AnalysisSummary:
 	def print_summary(self, log):
 		print ('*** ' + file + ' ***')
 		print ('Paivamaara: ' + log.pvm)
-		print ('Mittauksia: ' + str(log.kokonaisaika))
-		print ('Kaynnistyksia: ' + str(log.kaynnistykset))
-		print ('Pienin asteminuutti: ' + str(log.min_asteminuutti))
-		print ('Kaynnissa kokonaisajasta (lammitys): ' + str(float(log.kaynnissa_lammitys) / log.kokonaisaika * 100) + '%')
-		print ('Kaynnissa kokonaisajasta (vesi): ' + str(float(log.kaynnissa_vesi) / log.kokonaisaika * 100) + '%')
-		print ('Lisalampo paalla (min): ' + str(log.lisalampopaalla))
-		print ('Keskimenolampotila: ' + str(log.menolamposumma / log.kokonaisaika))
-		print ('Keskitulolampotila: ' + str(log.tulolamposumma / log.kokonaisaika))
-		print ('Pienin kaivon tulolampo: ' + str(log.min_kaivo_tulo))
-		print ('Pienin kaivon menolampo: ' + str(log.min_kaivo_meno))
-		print ('Keskiulkolampotila: ' + str(log.lamposumma / log.kokonaisaika))
-		# print (kokonaisaika)
+		print ('Mittauksia: %d' % log.kokonaisaika)
+		print ('Kaynnistyksia: %d' % log.kaynnistykset)
+		print ('Pienin asteminuutti: %d' % log.min_asteminuutti)
+		print ('Kaynnissa kokonaisajasta (lammitys): %.2f' % float(log.kaynnissa_lammitys / log.kokonaisaika * 100) + '%')
+		print ('Kaynnissa kokonaisajasta (vesi): %.2f' % float(log.kaynnissa_vesi / log.kokonaisaika * 100) + '%')
+		print ('Lisalampo paalla (min): %d' % log.lisalampopaalla)
+		print ('Keskimenolampotila: %.2fC' % (log.menolamposumma / log.kokonaisaika))
+		print ('Keskitulolampotila: %.2fC' % (log.tulolamposumma / log.kokonaisaika))
+		print ('Pienin kaivon tulolampo: %.2fC' % log.min_kaivo_tulo)		
+		print ('Pienin kaivon menolampo: %.2fC' % log.min_kaivo_meno)
+		print ('Keskiulkolampotila: %.2fC' % (log.lamposumma / log.kokonaisaika))
 
 	def add_summary_csv(self, log):
 		self.summary_writer.writerow([log.pvm,
@@ -64,7 +61,6 @@ class Log:
 		self.lamposumma = 0
 		self.menolamposumma = 0
 		self.tulolamposumma = 0
-		self.kaivomenolamposumma = 0
 		self.pvm = ''	
 
 		self.kaynnistykset = 0
@@ -75,12 +71,7 @@ class Log:
 		
 		self.min_kaivo_meno = 1000
 		self.min_kaivo_tulo = 1000
-
 		self.min_asteminuutti = 1000
-		self.edellinen_asteminuutti = 1000
-		self.edellinen_menolampo = 1000
-		self.edellinen_kaivo_menolampo = 1000
-		self.edellinen_toimintatila = 0
 		
 		self.t = np.arange(0, mittauksia, 1)
 		self.asteminuutit = np.zeros(mittauksia) 
@@ -94,10 +85,12 @@ class Log:
 		self.tavoitearvot = np.zeros(mittauksia)
 
 	def analyze(self, file):
-		if file.endswith('.LOG'):
+		if file.endswith('.LOG'):			
 			with open(file, 'r') as csvfile:
 				csvreader = csv.reader(csvfile, delimiter='	', quotechar='|')
 				index = 0
+				edellinen_asteminuutti = 1000
+				edellinen_toimintatila = 0
 				
 				try:
 					# skip first two rows
@@ -123,7 +116,7 @@ class Log:
 							# print toimintatila
 							if (toimintatila == 30): self.kaynnissa_lammitys = self.kaynnissa_lammitys + 1
 							if (toimintatila == 20): self.kaynnissa_vesi = self.kaynnissa_vesi + 1
-							if (self.edellinen_toimintatila == 10 and toimintatila > 10): 
+							if (edellinen_toimintatila == 10 and toimintatila > 10): 
 								self.kaynnistykset = self.kaynnistykset + 1
 							
 							# Asteminuutti ja onko lisälämpöpäällä
@@ -138,8 +131,8 @@ class Log:
 							self.tulolamposumma = self.tulolamposumma + float(row[lammitys_tulo_index]) / 10
 							
 							# Talletetaan muutama arvo seuraava kierrosta varten (vertailu)
-							self.edellinen_asteminuutti = asteminuutti
-							self.edellinen_toimintatila = toimintatila
+							edellinen_asteminuutti = asteminuutti
+							edellinen_toimintatila = toimintatila
 							
 							self.asteminuutit[index] = asteminuutti
 							self.kaivo_menolammot[index] = kaivo_menolampo
@@ -152,10 +145,12 @@ class Log:
 							index = index + 1
 				
 					# Login pituus/kokonaisaika on rivien määrä - 2
-					self.kokonaisaika = csvreader.line_num - 2		
+					self.kokonaisaika = csvreader.line_num - 2
+					return True
 
 				except csv.Error as e:
 					print ("Parsing error " + e + " + with file " + file)
+		return False
 			
 
 	def draw_graphs(self, file):
@@ -191,17 +186,17 @@ with open(path + 'summary.csv', 'w', newline='') as csvfile:
 	for file in f:
 		log = Log()
 		# Analysoidaan kaikki .LOG tiedostot
-		log.analyze(file)
-		# Luo yhteenvedot vain logeista jossa vähintään 10 tuntia logia (1 entry per minuutti)
-		if (log.kokonaisaika > 600): 
-			# Tulostetaan yhteenveto
-			summary.print_summary(log)
+		if log.analyze(file):
+			# Luo yhteenvedot vain logeista jossa vähintään 10 tuntia logia (1 entry per minuutti)
+			if (log.kokonaisaika > 600): 
+				# Tulostetaan yhteenveto
+				summary.print_summary(log)
+				
+				# Talletaan yhteenveto tiedostoon
+				summary.add_summary_csv(log)
 			
-			# Talletaan yhteenveto tiedostoon
-			summary.add_summary_csv(log)
-		
-		# Piirretään kuvaaja
-		log.draw_graphs(file)
+			# Piirretään kuvaaja
+			log.draw_graphs(file)
 		
 		
 
