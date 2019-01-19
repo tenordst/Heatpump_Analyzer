@@ -4,7 +4,7 @@ import random
 import csv
 import locale
 
-from pylab import *
+from numpy import *
 import matplotlib.pyplot as plt
 
 ulkolampotila_index = 3
@@ -23,20 +23,20 @@ lisalampo_raja = -400
 mittauksia = 1500
 
 def print_summary():
-		print '***'
-		print 'Paivamaara: ' + pvm
-		print 'Mittauksia: ' + str(kokonaisaika)
-		print 'Kaynnistyksia: ' + str(kaynnistykset)
-		print 'Pienin asteminuutti: ' + str(min_asteminuutti)
-		print 'Kaynnissa kokonaisajasta (lammitys): ' + str(float(kaynnissa_lammitys) / kokonaisaika * 100) + '%'
-		print 'Kaynnissa kokonaisajasta (vesi): ' + str(float(kaynnissa_vesi) / kokonaisaika * 100) + '%'
-		print 'Lisalampo paalla (min): ' + str(lisalampopaalla)
-		print 'Keskimenolampotila: ' + str(menolamposumma / kokonaisaika)
-		print 'Keskitulolampotila: ' + str(tulolamposumma / kokonaisaika)
-		print 'Pienin kaivon tulolampo: ' + str(min_kaivo_tulo)
-		print 'Pienin kaivon menolampo: ' + str(min_kaivo_meno)
-		print 'Keskiulkolampotila: ' + str(lamposumma / kokonaisaika)
-		# print kokonaisaika
+		print ('*** ' + file + ' ***')
+		print ('Paivamaara: ' + pvm)
+		print ('Mittauksia: ' + str(kokonaisaika))
+		print ('Kaynnistyksia: ' + str(kaynnistykset))
+		print ('Pienin asteminuutti: ' + str(min_asteminuutti))
+		print ('Kaynnissa kokonaisajasta (lammitys): ' + str(float(kaynnissa_lammitys) / kokonaisaika * 100) + '%')
+		print ('Kaynnissa kokonaisajasta (vesi): ' + str(float(kaynnissa_vesi) / kokonaisaika * 100) + '%')
+		print ('Lisalampo paalla (min): ' + str(lisalampopaalla))
+		print ('Keskimenolampotila: ' + str(menolamposumma / kokonaisaika))
+		print ('Keskitulolampotila: ' + str(tulolamposumma / kokonaisaika))
+		print ('Pienin kaivon tulolampo: ' + str(min_kaivo_tulo))
+		print ('Pienin kaivon menolampo: ' + str(min_kaivo_meno))
+		print ('Keskiulkolampotila: ' + str(lamposumma / kokonaisaika))
+		# print (kokonaisaika)
 
 def draw_graphs(file):
 	# plot the data
@@ -55,29 +55,38 @@ def draw_graphs(file):
 def add_summary_csv():
 		summary_writer.writerow([pvm,
 		str(kaynnistykset),
-		locale.format("%f",min_asteminuutti),
-		locale.format("%f",float(kaynnissa_lammitys) / kokonaisaika * 100),
-		locale.format("%f",float(kaynnissa_vesi) / kokonaisaika * 100),
+		locale.format_string("%f",min_asteminuutti),
+		locale.format_string("%f",float(kaynnissa_lammitys) / kokonaisaika * 100),
+		locale.format_string("%f",float(kaynnissa_vesi) / kokonaisaika * 100),
 		str(lisalampopaalla),
-		locale.format("%f",menolamposumma / kokonaisaika),
-		locale.format("%f",tulolamposumma / kokonaisaika),
-		locale.format("%f",lamposumma / kokonaisaika),
-		locale.format("%f",min_kaivo_tulo),
-		locale.format("%f",min_kaivo_meno)])
+		locale.format_string("%f",menolamposumma / kokonaisaika),
+		locale.format_string("%f",tulolamposumma / kokonaisaika),
+		locale.format_string("%f",lamposumma / kokonaisaika),
+		locale.format_string("%f",min_kaivo_tulo),
+		locale.format_string("%f",min_kaivo_meno)])
 
 locale.setlocale(locale.LC_ALL, '')		
 		
+path = './'
+if len(sys.argv) > 1:
+	path = path + sys.argv[1] + '/'
+
+print ('Analyzing path ' + path)
+
 # Get list of of all files in the current dir
 from os import walk
 f = []
-for (dirpath, dirnames, filenames) in walk('.'):
-    f.extend(filenames)
-    break
+for (dirpath, dirnames, filenames) in walk(path):
+	for filename in filenames:
+		f.append(path + filename)
+	break
+	
+print (f)
 		
-with open('summary.csv', 'wb') as csvfile:
-	summary_writer = csv.writer(csvfile)
+with open('summary.csv', 'w', newline='') as csvfile:
+	summary_writer = csv.writer(csvfile, dialect='excel')
 	summary_writer.writerow(['Paivamaara'] + ['Kaynnistyksia'] + ['Pienin asteminuutti'] + ['Kaynnissa kokonaisajasta(lammitys)'] + ['Kaynnissa kokonaisajasta(vesi)'] + ['Lisalampo paalla'] + ['Keskimenolampotila'] + ['Keskitulolampotila'] + ['Keskiulkolampotila'] + ['Pienin kaivo (tulo)'] + ['Pienin kaivo (meno)'])	
-		
+	
 	for file in f:
 	  # Käydään läpi kaikki .LOG tiedostot
 		
@@ -108,14 +117,9 @@ with open('summary.csv', 'wb') as csvfile:
 			pienenee = 0		
 			merkintoja = 0
 			
-			with open(file, 'rb') as csvfile:
+			with open(file, 'r') as csvfile:
 				csvreader = csv.reader(csvfile, delimiter='	', quotechar='|')
-				
-				#for row in csvreader:
-				#	merkintoja = merkintoja + 1
-				
-				# print merkintoja
-				
+
 				t = arange(0, mittauksia, 1)
 				asteminuutit = zeros(mittauksia) 
 				kaivo_menolammot = zeros(mittauksia)
@@ -130,8 +134,8 @@ with open('summary.csv', 'wb') as csvfile:
 				
 				try:
 					# skip first two rows
-					csvreader.next()
-					csvreader.next()
+					csvreader.__next__()
+					csvreader.__next__()
 					
 					for row in csvreader:
 						# Check that row is fully written
@@ -195,7 +199,7 @@ with open('summary.csv', 'wb') as csvfile:
 					#Piirretään kuvaaja
 					draw_graphs(file)
 				except csv.Error as e:
-					print "Parsing error with file " + file
+					print ("Parsing error " + e + " + with file " + file)
 			
 
 		
