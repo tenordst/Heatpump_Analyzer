@@ -83,7 +83,7 @@ for (dirpath, dirnames, filenames) in walk(path):
 	
 print (f)
 		
-with open('summary.csv', 'w') as csvfile:
+with open(path + 'summary.csv', 'w', newline='') as csvfile:
 	summary_writer = csv.writer(csvfile)
 	summary_writer.writerow(['Paivamaara'] + ['Kaynnistyksia'] + ['Pienin asteminuutti'] + ['Kaynnissa kokonaisajasta(lammitys)'] + ['Kaynnissa kokonaisajasta(vesi)'] + ['Lisalampo paalla'] + ['Keskimenolampotila'] + ['Keskitulolampotila'] + ['Keskiulkolampotila'] + ['Pienin kaivo (tulo)'] + ['Pienin kaivo (meno)'])	
 	
