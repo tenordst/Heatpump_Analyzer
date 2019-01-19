@@ -4,7 +4,7 @@ import random
 import csv
 import locale
 
-from numpy import *
+import numpy as np
 import matplotlib.pyplot as plt
 
 ulkolampotila_index = 3
@@ -120,15 +120,15 @@ with open(path + 'summary.csv', 'w', newline='') as csvfile:
 			with open(file, 'r') as csvfile:
 				csvreader = csv.reader(csvfile, delimiter='	', quotechar='|')
 
-				t = arange(0, mittauksia, 1)
-				asteminuutit = zeros(mittauksia) 
-				kaivo_menolammot = zeros(mittauksia)
-				kaivo_tulolammot = zeros(mittauksia)
-				menolammot = zeros(mittauksia)
-				tulolammot = zeros(mittauksia) 		 				
-				ulkolammot = zeros(mittauksia)
-				kayttovesilammot = zeros(mittauksia)
-				tavoitearvot = zeros(mittauksia)
+				t = np.arange(0, mittauksia, 1)
+				asteminuutit = np.zeros(mittauksia) 
+				kaivo_menolammot = np.zeros(mittauksia)
+				kaivo_tulolammot = np.zeros(mittauksia)
+				menolammot = np.zeros(mittauksia)
+				tulolammot = np.zeros(mittauksia) 		 				
+				ulkolammot = np.zeros(mittauksia)
+				kayttovesilammot = np.zeros(mittauksia)
+				tavoitearvot = np.zeros(mittauksia)
 				
 				csvreader = csv.reader(csvfile, delimiter='	', quotechar='|')
 				
