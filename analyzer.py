@@ -3,6 +3,7 @@ import sys
 import random
 import csv
 import locale
+import datetime
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -22,6 +23,8 @@ kayttovesi_index = 18
 kaivo_meno_raja = 2
 lisalampo_raja = -400
 mittauksia = 1500
+
+# Luokka joka toteuttaa toiminnot liittyen yhteenvedon tekemiseen
 class AnalysisSummary:
 	def __init__(self, csvfile):
 		self.summary_writer = csv.writer(csvfile)
@@ -55,6 +58,7 @@ class AnalysisSummary:
 		locale.format_string("%f",log.min_kaivo_tulo),
 		locale.format_string("%f",log.min_kaivo_meno)])
 
+# Luokka joka analysoi yksittäisen login ja tekee siitä kuvaajan
 class Log:
 	def __init__(self):
 		# Lämpösumma keskiarvojen laskemiseksi
@@ -73,7 +77,7 @@ class Log:
 		self.min_kaivo_tulo = 1000
 		self.min_asteminuutti = 1000
 		
-		self.t = np.arange(0, mittauksia, 1)
+		self.t = np.zeros(mittauksia)
 		self.asteminuutit = np.zeros(mittauksia) 
 		self.kaivo_menolammot = np.zeros(mittauksia)
 		self.kaivo_tulolammot = np.zeros(mittauksia)
@@ -89,7 +93,6 @@ class Log:
 			with open(file, 'r') as csvfile:
 				csvreader = csv.reader(csvfile, delimiter='	', quotechar='|')
 				index = 0
-				edellinen_asteminuutti = 1000
 				edellinen_toimintatila = 0
 				
 				try:
@@ -102,7 +105,7 @@ class Log:
 						if len(row) >= 20:
 							# Päivämääräksi ekan rivin päivämäärä
 							if(self.pvm == ''): self.pvm = row[0]
-							
+					
 							# Kaivon tulolämpötila 
 							kaivo_tulolampo = float(row[kaivo_tulo_index ]) / 10
 							if (self.min_kaivo_tulo > kaivo_tulolampo): self.min_kaivo_tulo = kaivo_tulolampo
@@ -134,6 +137,10 @@ class Log:
 							edellinen_asteminuutti = asteminuutti
 							edellinen_toimintatila = toimintatila
 							
+
+							[hours, minutes, seconds] = [int(x) for x in row[1].split(':')]
+							t = datetime.timedelta(hours=hours, minutes=minutes, seconds=seconds)
+							self.t[index] = t.seconds
 							self.asteminuutit[index] = asteminuutti
 							self.kaivo_menolammot[index] = kaivo_menolampo
 							self.kaivo_tulolammot[index] = kaivo_tulolampo
@@ -157,11 +164,11 @@ class Log:
 		# plot the data
 		fig = plt.figure(num=None, figsize=(16, 10), dpi=120)
 		ax1 = fig.add_subplot(1, 1, 1, title=file, xlabel="Aika")
-		ax1.plot(self.t, self.kaivo_menolammot, 'b',self.t, self.kaivo_tulolammot, 'g',  self.t, self.tulolammot, 'y',  self.t, self.menolammot, 'c', self.t, self.ulkolammot, 'm', self.t, self.kayttovesilammot, 'm', self.t, self.tavoitearvot, 'b')
+		ax1.plot(self.t, self.kaivo_menolammot, 'blue',self.t, self.kaivo_tulolammot, 'green',  self.t, self.tulolammot, 'yellow',  self.t, self.menolammot, 'cyan', self.t, self.ulkolammot, 'grey', self.t, self.kayttovesilammot, 'magenta', self.t, self.tavoitearvot, 'black')
+		ax1.legend(['Kaivo meno (C)','Kaivo tulo (C)','Lämmitys tulo (C)', 'Lämmitys meno (C)', 'Ulkolämpö (C)', 'Käyttövesi (C)', 'Tavoitelämpö (C)'])
 		ax2 = ax1.twinx()
-		ax2.plot(self.t,self.asteminuutit, 'r')
-		# ax.plot(xdata1, ydata1, 'r', xdata2, ydata2, 'b')	
-		# fig.show()
+		ax2.plot(self.t,self.asteminuutit, 'r')		
+		ax2.legend(['Asteminuutit'])
 		fig.savefig(file + ".png")
 		fig.clf()
 		plt.close(fig)
